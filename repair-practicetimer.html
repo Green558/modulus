@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repair Practice</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      background-color: #0a0a0a;
+      color: #e5e7eb;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 900px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: #4ade80;
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 2rem;
+      text-shadow: 0 0 10px #4ade80;
+    }
+
+    .subtitle {
+      color: #9ca3af;
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .timer-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .timer-box {
+      background-color: #000;
+      border: 2px solid #333;
+      border-radius: 4px;
+      padding: 12px 24px;
+    }
+
+    .timer-display {
+      font-size: 3rem;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .timer-display.idle { color: #666; }
+    .timer-display.running { color: #ff4444; text-shadow: 0 0 10px #ff4444; }
+    .timer-display.complete { color: #4ade80; text-shadow: 0 0 10px #4ade80; }
+    .timer-display.record { color: #facc15; text-shadow: 0 0 10px #facc15; }
+
+    .timer-status {
+      font-size: 1rem;
+      color: #666;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .best-time {
+      text-align: center;
+      color: #facc15;
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      text-shadow: 0 0 8px #facc15;
+    }
+
+    .new-record {
+      color: #4ade80;
+      margin-left: 8px;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+    }
+
+    .stat-score { color: #4ade80; text-shadow: 0 0 6px #4ade80; }
+    .stat-attempts { color: #facc15; text-shadow: 0 0 6px #facc15; }
+    .stat-accuracy { color: #00d9ff; text-shadow: 0 0 6px #00d9ff; }
+    .stat-fails { color: #f87171; text-shadow: 0 0 6px #f87171; }
+
+    .game-panel {
+      background-color: #000;
+      border: 3px solid #333;
+      border-radius: 4px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .game-panel.failed {
+      border-color: #dc2626;
+      animation: shake 0.5s;
+      box-shadow: inset 0 0 50px rgba(220, 38, 38, 0.2);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .label-in {
+      background-color: transparent;
+      border: 2px solid #4ade80;
+      color: #4ade80;
+      padding: 4px 24px;
+      font-size: 1.2rem;
+      text-shadow: 0 0 8px #4ade80;
+      box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+    }
+
+    #problems-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: filter 0.3s ease;
+    }
+
+    #problems-container.blurred {
+      filter: blur(12px);
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .start-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    }
+
+    .start-overlay.hidden {
+      display: none;
+    }
+
+    .start-btn {
+      padding: 20px 60px;
+      font-size: 2rem;
+      font-weight: bold;
+      border: 3px solid #4ade80;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #4ade80;
+      text-shadow: 0 0 15px #4ade80;
+      box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);
+      transition: all 0.2s;
+    }
+
+    .start-btn:hover {
+      background-color: rgba(74, 222, 128, 0.2);
+      box-shadow: 0 0 50px rgba(74, 222, 128, 0.7);
+      transform: scale(1.05);
+    }
+
+    .problem-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      padding: 6px 8px;
+      border-radius: 2px;
+      transition: background-color 0.3s;
+      border: 1px solid transparent;
+    }
+
+    .problem-row.completed {
+      background-color: rgba(74, 222, 128, 0.1);
+      border-color: rgba(74, 222, 128, 0.3);
+    }
+
+    .problem-row.wrong {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .problem-row.answered {
+      background-color: rgba(100, 100, 100, 0.1);
+    }
+
+    .number-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .num-btn {
+      width: 32px;
+      height: 32px;
+      font-size: 1.4rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      background-color: transparent;
+    }
+
+    .num-btn.default {
+      background-color: transparent;
+      color: #00d9ff;
+      text-shadow: 0 0 6px #00d9ff;
+    }
+
+    .num-btn.default:hover {
+      background-color: rgba(0, 217, 255, 0.2);
+      color: #fff;
+      text-shadow: 0 0 12px #00d9ff;
+      transform: scale(1.1);
+    }
+
+    .num-btn.correct {
+      background-color: rgba(74, 222, 128, 0.3);
+      color: #4ade80;
+      text-shadow: 0 0 10px #4ade80;
+    }
+
+    .num-btn.selected {
+      background-color: rgba(150, 150, 150, 0.3);
+      color: #aaa;
+      text-shadow: 0 0 4px #aaa;
+    }
+
+    .num-btn.disabled {
+      background-color: transparent;
+      color: #333;
+      cursor: not-allowed;
+    }
+
+    .num-btn.reveal-correct {
+      background-color: rgba(74, 222, 128, 0.4);
+      color: #4ade80;
+      text-shadow: 0 0 15px #4ade80;
+      animation: glow 1s infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 5px #4ade80; }
+      to { box-shadow: 0 0 15px #4ade80; }
+    }
+
+    .num-btn.reveal-wrong {
+      background-color: rgba(220, 38, 38, 0.4);
+      color: #ff4444;
+      text-shadow: 0 0 10px #ff4444;
+    }
+
+    .equation {
+      margin-left: 16px;
+      padding: 4px 12px;
+      font-size: 1.2rem;
+      min-width: 200px;
+    }
+
+    .equation.pending {
+      color: #facc15;
+      text-shadow: 0 0 8px #facc15;
+    }
+
+    .equation.solved {
+      color: #4ade80;
+      text-shadow: 0 0 8px #4ade80;
+    }
+
+    .equation.answered {
+      color: #888;
+      text-shadow: 0 0 4px #888;
+    }
+
+    .feedback {
+      margin-left: 8px;
+      font-size: 1rem;
+    }
+
+    .feedback.error {
+      color: #ff4444;
+      text-shadow: 0 0 6px #ff4444;
+    }
+
+    .feedback.success {
+      color: #4ade80;
+      text-shadow: 0 0 6px #4ade80;
+    }
+
+    .panel-footer {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 16px;
+    }
+
+    .label-out {
+      background-color: transparent;
+      border: 2px solid #facc15;
+      color: #facc15;
+      padding: 4px 20px;
+      font-size: 1.2rem;
+      text-shadow: 0 0 8px #facc15;
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
+    }
+
+    .label-exit {
+      background-color: transparent;
+      border: 2px solid #4ade80;
+      color: #4ade80;
+      padding: 4px 20px;
+      font-size: 1.2rem;
+      text-shadow: 0 0 8px #4ade80;
+      box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+    }
+
+    .completion-message {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .completion-title {
+      color: #4ade80;
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+      text-shadow: 0 0 15px #4ade80;
+    }
+
+    .completion-title.failed {
+      color: #ff4444;
+      text-shadow: 0 0 15px #ff4444;
+    }
+
+    .completion-stats {
+      color: #9ca3af;
+      font-size: 1.1rem;
+    }
+
+    .button-row {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 10px 28px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border: 2px solid;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      transition: all 0.2s;
+      background-color: transparent;
+    }
+
+    .btn-primary {
+      border-color: #00d9ff;
+      color: #00d9ff;
+      text-shadow: 0 0 8px #00d9ff;
+    }
+
+    .btn-primary:hover {
+      background-color: rgba(0, 217, 255, 0.2);
+      box-shadow: 0 0 15px rgba(0, 217, 255, 0.5);
+    }
+
+    .btn-secondary {
+      border-color: #666;
+      color: #888;
+    }
+
+    .btn-secondary:hover {
+      border-color: #888;
+      color: #aaa;
+      background-color: rgba(150, 150, 150, 0.1);
+    }
+
+    .btn-reveal {
+      border-color: #a855f7;
+      color: #a855f7;
+      text-shadow: 0 0 8px #a855f7;
+    }
+
+    .btn-reveal:hover {
+      background-color: rgba(168, 85, 247, 0.2);
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+    }
+
+    .btn-reveal.active {
+      background-color: rgba(168, 85, 247, 0.3);
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.7);
+    }
+
+    .help-box {
+      background-color: #000;
+      border: 2px solid #333;
+      border-radius: 4px;
+      padding: 16px;
+      margin-top: 24px;
+      font-size: 1rem;
+      max-width: 600px;
+    }
+
+    .help-title {
+      color: #facc15;
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 1.2rem;
+      text-shadow: 0 0 8px #facc15;
+    }
+
+    .help-list {
+      list-style-position: inside;
+      margin-bottom: 12px;
+      color: #aaa;
+    }
+
+    .help-list li {
+      margin-bottom: 4px;
+    }
+
+    .help-example {
+      color: #00d9ff;
+      text-shadow: 0 0 6px #00d9ff;
+    }
+
+    .help-answer {
+      color: #4ade80;
+      font-weight: bold;
+      text-shadow: 0 0 8px #4ade80;
+    }
+
+    .answer-reveal-hint {
+      margin-left: 8px;
+      font-size: 1rem;
+      color: #a855f7;
+      text-shadow: 0 0 6px #a855f7;
+    }
+
+    /* CRT screen effect */
+    .game-panel::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.03));
+      background-size: 100% 2px, 3px 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Repair Practice</h1>
+    <p class="subtitle">Calculate |num1 ± num2|, then use only the ones digit if result is double-digit</p>
+
+    <div class="timer-container">
+      <div class="timer-box">
+        <div id="timer-display" class="timer-display idle">00:00.00</div>
+        <div id="timer-status" class="timer-status">Press START to begin</div>
+      </div>
+    </div>
+
+    <div class="best-time">
+      🏆 Best Time: <span id="best-time">--:--.--</span>
+      <span id="new-record" class="new-record" style="display: none;">NEW RECORD!</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat-score">Score: <span id="score">0</span></div>
+      <div class="stat-attempts">Attempts: <span id="attempts">0</span></div>
+      <div class="stat-accuracy">Accuracy: <span id="accuracy">0</span>%</div>
+      <div class="stat-fails">Fails: <span id="fails">0</span></div>
+    </div>
+
+    <div class="game-panel" id="game-panel">
+      <div class="panel-header">
+        <div class="label-in">IN</div>
+      </div>
+
+      <div id="problems-container" class="blurred"></div>
+
+      <div class="panel-footer">
+        <div class="label-out">OUT</div>
+        <div class="label-exit">EXIT</div>
+      </div>
+
+      <div class="start-overlay" id="start-overlay">
+        <button class="start-btn" onclick="startGame()">START</button>
+      </div>
+    </div>
+
+    <div id="completion-message" class="completion-message" style="display: none;">
+      <div id="completion-title" class="completion-title">✓ Repair Complete!</div>
+      <div id="completion-stats" class="completion-stats"></div>
+    </div>
+
+    <div class="button-row">
+      <button class="btn btn-primary" onclick="newProblems()">New Problems</button>
+      <button class="btn btn-secondary" onclick="resetAll()">Reset All</button>
+      <button class="btn btn-reveal" id="reveal-btn" onclick="toggleRevealAnswers()">👁 Show Answers</button>
+    </div>
+
+    <div class="help-box">
+      <div class="help-title">How to solve:</div>
+      <ol class="help-list">
+        <li>Add or subtract the two numbers inside the absolute value bars</li>
+        <li>Take the absolute value (make it positive)</li>
+        <li>If the result is 10 or more, use only the ones digit (rightmost)</li>
+        <li>Click the matching number on the left</li>
+      </ol>
+      <div class="help-example">
+        Example: |−15 + −14| = |−29| = 29 → Answer: <span class="help-answer">9</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let problems = [];
+    let completedRows = new Set();
+    let score = 0;
+    let totalAttempts = 0;
+    let bestTime = null;
+    let hasStarted = false;
+    let timerRunning = false;
+    let elapsedTime = 0;
+    let timerInterval = null;
+    let feedback = {};
+    let failedAttempts = 0;
+    let hardModeAnswers = {};
+    let puzzleComplete = false;
+    let showAnswers = false;
+    let waitingForRetry = false;
+    let gameStarted = false;
+    let totalProblemsAttempted = 0;
+    let totalProblemsCorrect = 0;
+
+    function generateProblem() {
+      const num1 = Math.floor(Math.random() * 61) - 30;
+      const num2 = Math.floor(Math.random() * 61) - 30;
+      const isAddition = Math.random() > 0.5;
+      
+      let result;
+      if (isAddition) {
+        result = Math.abs(num1 + num2);
+      } else {
+        result = Math.abs(num1 - num2);
+      }
+      
+      const answer = result % 10;
+      
+      return {
+        num1,
+        num2,
+        operator: isAddition ? '+' : '-',
+        answer,
+        fullResult: result
+      };
+    }
+
+    function formatTime(ms) {
+      const minutes = Math.floor(ms / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      const centiseconds = Math.floor((ms % 1000) / 10);
+      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
+    }
+
+    function updateTimerDisplay() {
+      const display = document.getElementById('timer-display');
+      const status = document.getElementById('timer-status');
+      
+      display.textContent = formatTime(elapsedTime);
+      
+      display.className = 'timer-display';
+      if (!gameStarted) {
+        display.classList.add('idle');
+        status.textContent = 'Press START to begin';
+      } else if (timerRunning) {
+        display.classList.add('running');
+        status.textContent = 'Running...';
+      } else if (puzzleComplete) {
+        const isRecord = bestTime !== null && elapsedTime <= bestTime;
+        display.classList.add(isRecord ? 'record' : 'complete');
+        status.textContent = 'Complete!';
+      }
+    }
+
+    function startTimer() {
+      if (!timerRunning) {
+        timerRunning = true;
+        timerInterval = setInterval(() => {
+          elapsedTime += 10;
+          updateTimerDisplay();
+        }, 10);
+      }
+    }
+
+    function stopTimer() {
+      timerRunning = false;
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('score').textContent = score;
+      document.getElementById('attempts').textContent = totalAttempts;
+      document.getElementById('accuracy').textContent = totalProblemsAttempted > 0 ? Math.round((totalProblemsCorrect / totalProblemsAttempted) * 100) : 0;
+      document.getElementById('fails').textContent = failedAttempts;
+    }
+
+    function updateBestTime() {
+      const bestTimeEl = document.getElementById('best-time');
+      const newRecordEl = document.getElementById('new-record');
+      
+      if (bestTime !== null) {
+        bestTimeEl.textContent = formatTime(bestTime);
+      } else {
+        bestTimeEl.textContent = '--:--.--';
+      }
+      
+      const isNewRecord = puzzleComplete && bestTime !== null && elapsedTime <= bestTime;
+      newRecordEl.style.display = isNewRecord ? 'inline' : 'none';
+    }
+
+    function startGame() {
+      gameStarted = true;
+      hasStarted = true;
+      
+      // Hide overlay and unblur
+      document.getElementById('start-overlay').classList.add('hidden');
+      document.getElementById('problems-container').classList.remove('blurred');
+      
+      // Start timer
+      startTimer();
+      updateTimerDisplay();
+    }
+
+    function toggleRevealAnswers() {
+      showAnswers = !showAnswers;
+      updateRevealButton();
+      renderProblems();
+    }
+
+    function updateRevealButton() {
+      const btn = document.getElementById('reveal-btn');
+      if (showAnswers) {
+        btn.textContent = '👁 Hide Answers';
+        btn.classList.add('active');
+      } else {
+        btn.textContent = '👁 Show Answers';
+        btn.classList.remove('active');
+      }
+    }
+
+    function resetHardModeAnswers() {
+      hardModeAnswers = {};
+      feedback = {};
+      completedRows = new Set();
+      puzzleComplete = false;
+      waitingForRetry = false;
+      
+      document.getElementById('completion-message').style.display = 'none';
+      document.getElementById('new-record').style.display = 'none';
+      document.getElementById('game-panel').classList.remove('failed');
+      
+      renderProblems();
+    }
+
+    function checkHardModeCompletion() {
+      if (Object.keys(hardModeAnswers).length === 8) {
+        let correctCount = 0;
+        for (let i = 0; i < 8; i++) {
+          if (hardModeAnswers[i] === problems[i].answer) {
+            correctCount++;
+          }
+        }
+        
+        totalAttempts += 1;
+        totalProblemsAttempted += 8;
+        totalProblemsCorrect += correctCount;
+        
+        if (correctCount === 8) {
+          score += 1;
+          puzzleComplete = true;
+          stopTimer();
+          updateTimerDisplay();
+          if (bestTime === null || elapsedTime < bestTime) {
+            bestTime = elapsedTime;
+          }
+          updateBestTime();
+          updateStats();
+          
+          for (let i = 0; i < 8; i++) {
+            completedRows.add(i);
+            feedback[i] = { correct: true, clicked: hardModeAnswers[i] };
+          }
+          renderProblems();
+          showCompletion(true);
+        } else {
+          failedAttempts++;
+          updateStats();
+          waitingForRetry = true;
+          
+          document.getElementById('game-panel').classList.add('failed');
+          showCompletion(false);
+        }
+      }
+    }
+
+    function retryPuzzle() {
+      resetHardModeAnswers();
+    }
+
+    function handleClick(rowIndex, clickedNumber) {
+      if (!gameStarted) return;
+      if (puzzleComplete) return;
+      
+      if (waitingForRetry) {
+        retryPuzzle();
+        return;
+      }
+      
+      if (hardModeAnswers.hasOwnProperty(rowIndex)) return;
+
+      hardModeAnswers[rowIndex] = clickedNumber;
+      renderProblems();
+      checkHardModeCompletion();
+      
+      updateTimerDisplay();
+    }
+
+    function showCompletion(success) {
+      const completionEl = document.getElementById('completion-message');
+      const titleEl = document.getElementById('completion-title');
+      const statsEl = document.getElementById('completion-stats');
+      const accuracy = totalAttempts > 0 ? Math.round((score / totalAttempts) * 100) : 0;
+      
+      completionEl.style.display = 'block';
+      
+      if (success) {
+        titleEl.textContent = '✓ Repair Complete!';
+        titleEl.classList.remove('failed');
+        statsEl.textContent = `Completed in ${formatTime(elapsedTime)} with ${accuracy}% accuracy`;
+      } else {
+        titleEl.textContent = '✗ INCORRECT - Click anywhere to retry';
+        titleEl.classList.add('failed');
+        statsEl.textContent = 'Use "Show Answers" to learn, then click to retry';
+      }
+    }
+
+    function renderProblems() {
+      const container = document.getElementById('problems-container');
+      container.innerHTML = '';
+
+      problems.forEach((problem, rowIndex) => {
+        const isCompleted = completedRows.has(rowIndex);
+        const rowFeedback = feedback[rowIndex];
+        const hasHardModeAnswer = hardModeAnswers.hasOwnProperty(rowIndex);
+        const userAnswer = hardModeAnswers[rowIndex];
+        const wasWrong = hasHardModeAnswer && userAnswer !== problem.answer;
+        
+        const row = document.createElement('div');
+        row.className = 'problem-row';
+        
+        if (isCompleted && puzzleComplete) {
+          row.classList.add('completed');
+        } else if (waitingForRetry && showAnswers && wasWrong) {
+          row.classList.add('wrong');
+        } else if (hasHardModeAnswer) {
+          row.classList.add('answered');
+        }
+
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'number-buttons';
+
+        for (let num = 0; num <= 9; num++) {
+          const btn = document.createElement('button');
+          btn.className = 'num-btn';
+          btn.textContent = num;
+          
+          if (isCompleted && puzzleComplete && num === problem.answer) {
+            btn.classList.add('correct');
+          } else if (waitingForRetry && showAnswers) {
+            if (num === problem.answer) {
+              btn.classList.add('reveal-correct');
+            } else if (hasHardModeAnswer && userAnswer === num && wasWrong) {
+              btn.classList.add('reveal-wrong');
+            } else {
+              btn.classList.add('disabled');
+            }
+          } else if (hasHardModeAnswer && userAnswer === num) {
+            btn.classList.add('selected');
+          } else if (hasHardModeAnswer || puzzleComplete || waitingForRetry) {
+            btn.classList.add('disabled');
+          } else {
+            btn.classList.add('default');
+          }
+          
+          btn.onclick = () => handleClick(rowIndex, num);
+          buttonsDiv.appendChild(btn);
+        }
+
+        const equation = document.createElement('div');
+        equation.className = 'equation';
+        
+        if (isCompleted && puzzleComplete) {
+          equation.classList.add('solved');
+        } else if (hasHardModeAnswer) {
+          equation.classList.add('answered');
+        } else {
+          equation.classList.add('pending');
+        }
+        
+        equation.textContent = `MOD(|${problem.num1} ${problem.operator} ${problem.num2}|)`;
+
+        row.appendChild(buttonsDiv);
+        row.appendChild(equation);
+
+        if (isCompleted && puzzleComplete) {
+          const fb = document.createElement('div');
+          fb.className = 'feedback success';
+          fb.textContent = '✓';
+          row.appendChild(fb);
+        } else if (waitingForRetry && showAnswers && hasHardModeAnswer) {
+          const fb = document.createElement('div');
+          fb.className = 'answer-reveal-hint';
+          if (wasWrong) {
+            fb.textContent = `You: ${userAnswer} → Correct: ${problem.answer}`;
+          } else {
+            fb.textContent = `✓ Correct!`;
+            fb.className = 'feedback success';
+          }
+          row.appendChild(fb);
+        }
+
+        container.appendChild(row);
+      });
+    }
+
+    function newProblems() {
+      problems = [];
+      for (let i = 0; i < 8; i++) {
+        problems.push(generateProblem());
+      }
+      completedRows = new Set();
+      feedback = {};
+      hardModeAnswers = {};
+      hasStarted = false;
+      gameStarted = false;
+      puzzleComplete = false;
+      waitingForRetry = false;
+      stopTimer();
+      elapsedTime = 0;
+      
+      // Reset to blurred state with start button
+      document.getElementById('problems-container').classList.add('blurred');
+      document.getElementById('start-overlay').classList.remove('hidden');
+      document.getElementById('completion-message').style.display = 'none';
+      document.getElementById('new-record').style.display = 'none';
+      document.getElementById('game-panel').classList.remove('failed');
+      
+      renderProblems();
+      updateTimerDisplay();
+    }
+
+    function resetAll() {
+      score = 0;
+      totalAttempts = 0;
+      bestTime = null;
+      failedAttempts = 0;
+      totalProblemsAttempted = 0;
+      totalProblemsCorrect = 0;
+      showAnswers = false;
+      updateRevealButton();
+      updateStats();
+      updateBestTime();
+      newProblems();
+    }
+
+    // Initialize
+    newProblems();
+  </script>
+</body>
+</html>
